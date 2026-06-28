@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black">
   <img src="https://img.shields.io/badge/MediaPipe-4285F4?style=for-the-badge&logo=google&logoColor=white">
 
-<img src="https://readme-typing-svg.demolab.com?font=Poppins&weight=700&size=28&duration=3500&pause=1000&color=00E7FF&center=true&vCenter=true&width=900&lines=DEVELOPED+BY-+MD.+FAHAD+HOSSAIN;Sliding+Puzzle;Real-Time+Hand+Tracking;Live+Camera+Snapshot;Glassmorphism+UI;Built+with+HTML+CSS+JavaScript" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=Poppins&weight=700&size=28&duration=3500&pause=1000&color=00E7FF&center=true&vCenter=true&width=900&lines=DEVELOPED+BY-+MD.+FAHAD+HOSSAIN;Sliding+Puzzle;Real-Time+Hand+Tracking;Live+Camera+Snapshot;Glassmorphism+UI;Built+with+HTML,+CSS,+JavaScript,+Pyton" alt="Typing SVG" />
 
 <p>
   <p align="center">
