@@ -1,6 +1,7 @@
 <div align="center">
   
-# 🧩  Live Snapshot Glass Puzzle Game
+# 🧩 LIVE SNAPSHOT GLASS PUZZLE GAME
+
 
 ![Project Banner](https://img.shields.io/badge/AI-Hand%20Tracking-blue?style=for-the-badge)
 ![HTML](https://img.shields.io/badge/HTML5-orange?style=for-the-badge)
@@ -24,6 +25,7 @@
 <img src="https://komarev.com/ghpvc/?username=MdFahadHossain006&label=Project+Views&color=0e75b6&style=for-the-badge">
 
 </div>
+
 
 ---
 
