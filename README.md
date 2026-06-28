@@ -15,12 +15,13 @@
 
 <img src="https://skillicons.dev/icons?i=html,css,javascript,python,flutter,dart,firebase,github,vscode" />
 
-</p>>
+</p>
 
 </p>
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00E7FF,100:7B2FF7&height=180&section=header&text=WELCOME TO GITHUB . I AM MD.FAHAD HOSSAIN &fontSize=45&fontColor=ffffff&animation=fadeIn"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00E7FF,100:7B2FF7&height=180&section=header&text=Welcome!&fontSize=45&fontColor=ffffff&animation=fadeIn"/>
 
+<img src="https://komarev.com/ghpvc/?username=MdFahadHossain006&label=Project+Views&color=0e75b6&style=for-the-badge">
 
 </div>
 
@@ -81,45 +82,6 @@
 6. Use your index finger to move puzzle tiles.
 7. Complete the puzzle with the fewest moves and best accuracy.
 
----
-
-## 💻 Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/YourUsername/YourRepository.git
-```
-
-Open the project folder:
-
-```bash
-cd YourRepository
-```
-
-Run the project by opening:
-
-```
-index.html
-```
-
-or use a local server such as VS Code Live Server.
-
----
-
-## 📂 Project Structure
-
-```
-project/
-│
-├── index.html
-├── README.md
-└── assets/
-```
-
-*(If your entire project is contained in a single HTML file, only `index.html` is required.)*
-
----
 
 ## 🎯 Future Improvements
 
@@ -133,38 +95,52 @@ project/
 - Dark & Light Themes
 
 ---
+<div align="center">
 
-## 👨‍💻 Developer
+# 👨‍💻 Developer
 
-**MD. Fahad Hossain**
+**MD FAHAD HOSSAIN**
+</div>
 
-- GitHub: https://github.com/YourUsername
-- Facebook: https://facebook.com/YourProfile
-- Instagram: https://instagram.com/YourProfile
-- YouTube: https://youtube.com/@YourChannel
+## 📱 Developer Contact
 
----
-
-## ⭐ Support
-
-If you like this project, consider giving it a **⭐ Star** on GitHub.
-
-It helps support future development.
+  - [Facebook](https://www.facebook.com/share/18YSgb9Ywo/)
+  - [Instagram](https://www.instagram.com/mdfahadhossain006)
+  - [YouTube](https://youtube.com/@brightnessworld)
+  - [GitHub](https://github.com/MdFahadHossain006)
+  - [GMAIL](hossainmdfahad67@ganil.com) 
 
 ---
+### ⚠️ Copyright & License
 
-## 📄 License
+**© 2026 MD. FAHAD HOSSAIN. All Rights Reserved.**
 
-This project is licensed under the **MIT License**.
+This project is **proprietary software**. Unauthorized copying, distribution, 
+modification, or use of this code is strictly prohibited.
 
-Feel free to use, modify, and contribute.
+- ❌ **No forking** without permission
+- ❌ **No copying** of source code
+- ❌ **No commercial use**
+- ✅ **Personal use only** as an end-user
 
----
+**Legal action will be taken against violators.**
 
-## ❤️ Thank You
+[Contact for Licensing](https://www.instagram.com/mdfahadhossain006)
 
-Thank you for checking out this project!
 
-If you have suggestions or ideas for improvement, feel free to open an issue or submit a pull request.
+<p align="center">
 
-Happy Coding! 🚀
+<a href="https://github.com/MdFahadHossain006/FBROADCAST">
+<img src="https://img.shields.io/badge/⭐-Star%20This%20Repository-yellow?style=for-the-badge"/>
+</a>
+
+</p>
+
+
+<div align="center">
+
+### ENJOY THE GAME......
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00D9FF,100:0066FF&height=120&section=footer"/>
+
+</div>
