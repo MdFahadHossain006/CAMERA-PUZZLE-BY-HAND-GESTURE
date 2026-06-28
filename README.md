@@ -3,7 +3,6 @@
 # 🧩 LIVE SNAPSHOT GLASS PUZZLE GAME
 
 
-![Project Banner](https://img.shields.io/badge/AI-Hand%20Tracking-blue?style=for-the-badge)
 ![HTML](https://img.shields.io/badge/HTML5-orange?style=for-the-badge)
 ![CSS](https://img.shields.io/badge/CSS3-blue?style=for-the-badge)
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black">
