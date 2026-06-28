@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIVE SNAPSHOT GLASS-PUZZLE GAME</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --obsidian: #0d0d11;
+    --purple: #7b2fff;
+    --cyan: #00f5ff;
+    --gold: #ffd700;
+    --pink: #ff2d78;
+    --green: #00ff88;
+    --glass: rgba(255,255,255,0.04);
+    --glass-border: rgba(0,245,255,0.18);
+    --glow-cyan: 0 0 20px rgba(0,245,255,0.5), 0 0 60px rgba(0,245,255,0.2);
+    --glow-purple: 0 0 20px rgba(123,47,255,0.5), 0 0 60px rgba(123,47,255,0.2);
+    --glow-gold: 0 0 20px rgba(255,215,0,0.5), 0 0 60px rgba(255,215,0,0.2);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--obsidian);
+    color: #e0e0ff;
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* ── BACKGROUND ── */
+  #bg-canvas {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  }
+  .aurora {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 40% at 20% 60%, rgba(123,47,255,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 30%, rgba(0,245,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 50% 90%, rgba(255,45,120,0.06) 0%, transparent 60%);
+    animation: auroraDrift 18s ease-in-out infinite alternate;
+  }
+  @keyframes auroraDrift {
+    0%   { transform: scale(1) translateY(0); }
+    100% { transform: scale(1.08) translateY(-30px); }
+  }
+
+  /* ── LAYOUT ── */
+  #app { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+  /* ── DEVELOPER BRAND ── */
+  .dev-brand {
+    width: 100%; text-align: center; padding: 18px 20px 10px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+    position: relative; overflow: hidden;
+  }
+  .dev-brand-text {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.65rem, 2vw, 0.9rem);
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    background: linear-gradient(90deg, var(--gold), var(--cyan), var(--gold), var(--cyan));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: textShine 4s linear infinite;
+    text-shadow: none;
+    position: relative;
+  }
+  @keyframes textShine {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+  }
+  .dev-brand::after {
+    content: '';
+    position: absolute; bottom: 0; left: 10%; right: 10%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  }
+
+  /* ── TITLE ── */
+  .game-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.2rem, 4vw, 2.2rem);
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    text-align: center;
+    margin: 18px 0 6px;
+    background: linear-gradient(135deg, var(--cyan), #fff, var(--purple), var(--cyan));
+    background-size: 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: textShine 6s linear infinite;
+    filter: drop-shadow(0 0 18px rgba(0,245,255,0.4));
+  }
+  .game-subtitle {
+    text-align: center;
+    font-size: 0.8rem;
+    letter-spacing: 0.4em;
+    color: rgba(0,245,255,0.5);
+    margin-bottom: 20px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main-content {
+    width: 100%; max-width: 1300px;
+    padding: 0 16px 40px;
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+  }
+
+  /* ── GLASS CARD ── */
+  .glass-card {
+    background: var(--glass);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07);
+    position: relative; overflow: hidden;
+  }
+  .glass-card::before {
+    content: '';
+    position: absolute; inset: 0; border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* ── DASHBOARD ── */
+  .dashboard {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    justify-content: center; width: 100%;
+  }
+  .stat-card {
+    flex: 1 1 120px; min-width: 110px; max-width: 180px;
+    padding: 14px 16px; text-align: center;
+    border-radius: 16px;
+  }
+  .stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem; letter-spacing: 0.2em;
+    color: rgba(0,245,255,0.6); margin-bottom: 6px;
+  }
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.5rem; font-weight: 700;
+    color: var(--cyan);
+    text-shadow: var(--glow-cyan);
+    animation: counterPulse 2s ease-in-out infinite;
+  }
+  @keyframes counterPulse {
+    0%,100% { text-shadow: 0 0 10px rgba(0,245,255,0.4); }
+    50%      { text-shadow: 0 0 24px rgba(0,245,255,0.8), 0 0 50px rgba(0,245,255,0.3); }
+  }
+
+  /* ── GAME AREA ── */
+  .game-area {
+    display: flex; flex-wrap: wrap; gap: 24px;
+    justify-content: center; align-items: flex-start;
+    width: 100%;
+  }
+
+  /* ── CAMERA STATION ── */
+  .camera-station {
+    flex: 1 1 340px; max-width: 500px;
+    padding: 20px;
+  }
+  .station-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.35em;
+    color: var(--cyan); margin-bottom: 14px; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .station-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: blinkDot 1.2s ease-in-out infinite;
+  }
+  @keyframes blinkDot { 0%,100%{opacity:1}50%{opacity:0.2} }
+
+  .cam-wrapper {
+    position: relative; border-radius: 14px; overflow: hidden;
+    aspect-ratio: 4/3;
+    border: 2px solid rgba(0,245,255,0.3);
+    box-shadow: 0 0 30px rgba(0,245,255,0.15), inset 0 0 30px rgba(0,0,0,0.4);
+  }
+  #video {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transform: scaleX(-1);
+  }
+  #handCanvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    pointer-events: none; transform: scaleX(-1);
+  }
+
+  /* Cyberpunk corners */
+  .cam-corner {
+    position: absolute; width: 28px; height: 28px; z-index: 5;
+    pointer-events: none;
+  }
+  .cam-corner.tl { top: 8px; left: 8px; border-top: 3px solid var(--cyan); border-left: 3px solid var(--cyan); border-radius: 4px 0 0 0; box-shadow: -3px -3px 10px rgba(0,245,255,0.5); }
+  .cam-corner.tr { top: 8px; right: 8px; border-top: 3px solid var(--cyan); border-right: 3px solid var(--cyan); border-radius: 0 4px 0 0; box-shadow: 3px -3px 10px rgba(0,245,255,0.5); }
+  .cam-corner.bl { bottom: 8px; left: 8px; border-bottom: 3px solid var(--cyan); border-left: 3px solid var(--cyan); border-radius: 0 0 0 4px; box-shadow: -3px 3px 10px rgba(0,245,255,0.5); }
+  .cam-corner.br { bottom: 8px; right: 8px; border-bottom: 3px solid var(--cyan); border-right: 3px solid var(--cyan); border-radius: 0 0 4px 0; box-shadow: 3px 3px 10px rgba(0,245,255,0.5); }
+
+  /* Scan line */
+  .scan-line {
+    position: absolute; left: 0; right: 0; height: 2px; z-index: 4;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    box-shadow: 0 0 10px var(--cyan);
+    animation: scanMove 3s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes scanMove {
+    0%   { top: 0%; opacity: 0.8; }
+    50%  { opacity: 1; }
+    100% { top: 100%; opacity: 0.8; }
+  }
+
+  /* Face frame */
+  .face-frame {
+    position: absolute; z-index: 3;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44%; aspect-ratio: 1;
+    border: 2px solid rgba(255,215,0,0.7);
+    box-shadow: 0 0 20px rgba(255,215,0,0.4), inset 0 0 20px rgba(255,215,0,0.05);
+    border-radius: 4px;
+    animation: faceFramePulse 2.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes faceFramePulse {
+    0%,100% { box-shadow: 0 0 12px rgba(255,215,0,0.3); border-color: rgba(255,215,0,0.5); }
+    50%      { box-shadow: 0 0 28px rgba(255,215,0,0.7); border-color: rgba(255,215,0,0.9); }
+  }
+
+  /* HUD overlay */
+  .cam-hud {
+    position: absolute; bottom: 10px; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding: 0 12px; z-index: 6; pointer-events: none;
+  }
+  .hud-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem; color: rgba(0,245,255,0.7);
+    background: rgba(0,0,0,0.45); padding: 3px 7px; border-radius: 4px;
+    border: 1px solid rgba(0,245,255,0.2);
+  }
+  .face-status {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    z-index: 7; pointer-events: none;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.58rem;
+    color: var(--green); text-align: center;
+    background: rgba(0,0,0,0.55); padding: 4px 10px; border-radius: 6px;
+    border: 1px solid rgba(0,255,136,0.3);
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .face-status.visible { opacity: 1; }
+
+  /* Countdown overlay */
+  #countdown-overlay {
+    position: absolute; inset: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  #countdown-overlay.active { opacity: 1; pointer-events: all; }
+  .countdown-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 8rem; font-weight: 900;
+    color: var(--cyan);
+    text-shadow: 0 0 40px var(--cyan), 0 0 80px rgba(0,245,255,0.4);
+    animation: cdPop 0.8s cubic-bezier(0.23,1,0.32,1) forwards;
+  }
+  @keyframes cdPop {
+    0%   { transform: scale(2.5); opacity: 0; }
+    60%  { transform: scale(0.9); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Flash */
+  #flash {
+    position: absolute; inset: 0; z-index: 25;
+    background: white; opacity: 0; pointer-events: none;
+    transition: opacity 0.1s;
+  }
+
+  /* Gesture progress ring */
+  .gesture-ring {
+    position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%);
+    z-index: 8; pointer-events: none;
+  }
+  .gesture-ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 4; }
+  .ring-fg { fill: none; stroke: var(--cyan); stroke-width: 4; stroke-linecap: round;
+    stroke-dasharray: 125.66; stroke-dashoffset: 125.66;
+    transition: stroke-dashoffset 0.1s linear;
+    filter: drop-shadow(0 0 6px var(--cyan));
+  }
+
+  /* Controls */
+  .cam-controls {
+    display: flex; gap: 10px; margin-top: 14px; justify-content: center; flex-wrap: wrap;
+  }
+  .btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem; font-weight: 700;
+    letter-spacing: 0.15em;
+    padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer;
+    transition: all 0.25s;
+    position: relative; overflow: hidden;
+  }
+  .btn::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .btn-cyan {
+    background: linear-gradient(135deg, rgba(0,245,255,0.2), rgba(0,245,255,0.05));
+    color: var(--cyan); border: 1px solid rgba(0,245,255,0.4);
+    box-shadow: 0 0 15px rgba(0,245,255,0.15);
+  }
+  .btn-cyan:hover {
+    background: linear-gradient(135deg, rgba(0,245,255,0.3), rgba(0,245,255,0.1));
+    box-shadow: 0 0 25px rgba(0,245,255,0.35);
+    transform: translateY(-2px);
+  }
+  .btn-purple {
+    background: linear-gradient(135deg, rgba(123,47,255,0.25), rgba(123,47,255,0.08));
+    color: #bf94ff; border: 1px solid rgba(123,47,255,0.4);
+    box-shadow: 0 0 15px rgba(123,47,255,0.15);
+  }
+  .btn-purple:hover {
+    box-shadow: 0 0 25px rgba(123,47,255,0.35);
+    transform: translateY(-2px);
+  }
+  .btn-gold {
+    background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,215,0,0.05));
+    color: var(--gold); border: 1px solid rgba(255,215,0,0.35);
+  }
+  .btn-gold:hover {
+    box-shadow: 0 0 20px rgba(255,215,0,0.3);
+    transform: translateY(-2px);
+  }
+
+  /* ── PUZZLE STATION ── */
+  .puzzle-station {
+    flex: 1 1 340px; max-width: 500px;
+    padding: 20px;
+  }
+  .puzzle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    border-radius: 12px; overflow: hidden;
+    aspect-ratio: 1;
+    box-shadow: 0 0 40px rgba(0,245,255,0.1), 0 0 0 2px rgba(0,245,255,0.2);
+    position: relative;
+  }
+  .puzzle-tile {
+    position: relative; cursor: pointer;
+    background: #111;
+    overflow: hidden;
+    transition: transform 0.18s cubic-bezier(0.23,1,0.32,1),
+                box-shadow 0.18s;
+  }
+  .puzzle-tile canvas {
+    width: 100%; height: 100%; display: block;
+  }
+  .puzzle-tile:not(.empty):hover {
+    transform: scale(1.04);
+    z-index: 2;
+    box-shadow: 0 0 20px rgba(0,245,255,0.5);
+  }
+  .puzzle-tile.empty { background: rgba(0,0,0,0.6); cursor: default; }
+  .puzzle-tile.moving {
+    animation: tilePop 0.2s ease-out;
+  }
+  @keyframes tilePop {
+    0%   { transform: scale(1.08); box-shadow: 0 0 30px rgba(0,245,255,0.8); }
+    100% { transform: scale(1); }
+  }
+  .puzzle-tile.correct { box-shadow: inset 0 0 10px rgba(0,255,136,0.3); }
+
+  .puzzle-empty-state {
+    grid-column: 1 / -1; grid-row: 1 / -1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: rgba(0,245,255,0.3); text-align: center; padding: 30px;
+    aspect-ratio: 1;
+  }
+  .empty-icon { font-size: 3rem; margin-bottom: 14px; opacity: 0.5; }
+  .empty-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.2em;
+    color: rgba(0,245,255,0.4); line-height: 1.8;
+  }
+
+  /* Hand overlay on puzzle */
+  #puzzleHandCanvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 10;
+  }
+
+  /* ── GESTURE HINTS ── */
+  .hint-bar {
+    width: 100%; padding: 12px 20px;
+    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+  }
+  .hint-item {
+    display: flex; align-items: center; gap: 7px;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+    color: rgba(255,255,255,0.45); letter-spacing: 0.1em;
+  }
+  .hint-icon {
+    font-size: 1.1rem;
+    filter: grayscale(0.5);
+  }
+
+  /* ── WIN SCREEN ── */
+  #win-screen {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(16px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.6s;
+  }
+  #win-screen.active { opacity: 1; pointer-events: all; }
+  .win-card {
+    max-width: 480px; width: 90%; padding: 40px 32px; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .win-trophy { font-size: 4rem; margin-bottom: 14px; animation: trophySpin 4s ease-in-out infinite; }
+  @keyframes trophySpin {
+    0%,100% { transform: scale(1) rotate(-5deg); }
+    50%      { transform: scale(1.1) rotate(5deg); }
+  }
+  .win-title {
+    font-family: 'Orbitron', monospace; font-size: 2rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+  }
+  .win-stats { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+  .win-stat {
+    padding: 12px 18px; border-radius: 12px; min-width: 90px;
+    background: rgba(0,245,255,0.06); border: 1px solid rgba(0,245,255,0.2);
+  }
+  .win-stat-label { font-size: 0.6rem; letter-spacing: 0.2em; color: rgba(0,245,255,0.6); margin-bottom: 4px; }
+  .win-stat-value { font-family: 'Orbitron', monospace; font-size: 1.2rem; color: var(--cyan); }
+  #confetti-canvas { position: absolute; inset: 0; pointer-events: none; }
+
+  /* ── MUTE BTN ── */
+  #mute-btn {
+    position: fixed; top: 12px; right: 14px; z-index: 50;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(0,245,255,0.08); border: 1px solid rgba(0,245,255,0.25);
+    color: var(--cyan); font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; backdrop-filter: blur(10px);
+  }
+  #mute-btn:hover { background: rgba(0,245,255,0.18); transform: scale(1.1); }
+
+  /* ── FOOTER ── */
+  .footer {
+    width: 100%; margin-top: 30px; padding: 30px 20px;
+    border-top: 1px solid rgba(0,245,255,0.1);
+    text-align: center;
+  }
+  .footer-heading {
+    font-family: 'Orbitron', monospace; font-size: 0.8rem;
+    letter-spacing: 0.35em; color: rgba(0,245,255,0.5);
+    margin-bottom: 18px;
+  }
+  .social-links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .social-btn {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; text-decoration: none;
+    transition: all 0.3s; position: relative;
+    backdrop-filter: blur(10px); border: 1px solid;
+    animation: floatBtn 3s ease-in-out infinite;
+  }
+  .social-btn:nth-child(2) { animation-delay: 0.5s; }
+  .social-btn:nth-child(3) { animation-delay: 1s; }
+  .social-btn:nth-child(4) { animation-delay: 1.5s; }
+  @keyframes floatBtn {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+  }
+  .social-btn:hover { transform: translateY(-8px) scale(1.12); }
+  .fb { background: rgba(24,119,242,0.12); border-color: rgba(24,119,242,0.4); color: #1877f2; }
+  .fb:hover { box-shadow: 0 0 25px rgba(24,119,242,0.5); }
+  .ig { background: rgba(225,48,108,0.12); border-color: rgba(225,48,108,0.4); color: #e1306c; }
+  .ig:hover { box-shadow: 0 0 25px rgba(225,48,108,0.5); }
+  .yt { background: rgba(255,0,0,0.12); border-color: rgba(255,0,0,0.35); color: #ff0000; }
+  .yt:hover { box-shadow: 0 0 25px rgba(255,0,0,0.5); }
+  .gh { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.2); color: #fff; }
+  .gh:hover { box-shadow: 0 0 25px rgba(255,255,255,0.3); }
+
+  /* ── NOTIFICATIONS ── */
+  #notif {
+    position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+    z-index: 60; pointer-events: none;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+    padding: 8px 20px; border-radius: 20px;
+    background: rgba(0,245,255,0.12); border: 1px solid rgba(0,245,255,0.35);
+    color: var(--cyan); letter-spacing: 0.15em;
+    opacity: 0; transition: opacity 0.3s; white-space: nowrap;
+  }
+  #notif.show { opacity: 1; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .game-area { flex-direction: column; align-items: center; }
+    .camera-station, .puzzle-station { max-width: 100%; }
+  }
+
+  /* ── PUZZLE completion glow ── */
+  .puzzle-grid.near-done { box-shadow: 0 0 60px rgba(0,255,136,0.3), 0 0 0 2px var(--green); }
+  .puzzle-grid.solved { box-shadow: 0 0 80px rgba(0,255,136,0.6), 0 0 0 3px var(--green); }
+
+  /* Transition overlay */
+  #transition-overlay {
+    position: fixed; inset: 0; z-index: 90;
+    pointer-events: none; opacity: 0;
+  }
+  #transition-canvas { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="aurora"></div>
+
+<div id="app">
+  <!-- Developer Brand -->
+  <div class="dev-brand">
+    <div class="dev-brand-text">✦ THIS WEBSITE IS DEVELOPED BY — MD. FAHAD HOSSAIN ✦</div>
+  </div>
+
+  <!-- Title -->
+  <h1 class="game-title">LIVE SNAPSHOT GLASS-PUZZLE</h1>
+  <div class="game-subtitle"> HAND TRACKING · REAL-TIME</div>
+
+  <div class="main-content">
+
+    <!-- Dashboard -->
+    <div class="dashboard">
+      <div class="stat-card glass-card">
+        <div class="stat-label">MOVES</div>
+        <div class="stat-value" id="moves-val">0</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-label">TIME</div>
+        <div class="stat-value" id="time-val">0:00</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-label">COMPLETE</div>
+        <div class="stat-value" id="complete-val">0%</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-label">ACCURACY</div>
+        <div class="stat-value" id="accuracy-val">—</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-label">BEST</div>
+        <div class="stat-value" id="best-val" style="color:var(--gold);text-shadow:var(--glow-gold)">—</div>
+      </div>
+    </div>
+
+    <!-- Hint bar -->
+    <div class="hint-bar glass-card">
+      <div class="hint-item"><span class="hint-icon">✋</span> HOLD STILL 3s → AUTO CAPTURE</div>
+      <div class="hint-item"><span class="hint-icon">👆</span> POINT TO MOVE TILE</div>
+      <div class="hint-item"><span class="hint-icon">🎯</span> ALIGN FACE TO GOLD FRAME</div>
+      <div class="hint-item"><span class="hint-icon">🔇</span> MUTE BUTTON TOP-RIGHT</div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="game-area">
+
+      <!-- Camera Station -->
+      <div class="camera-station glass-card">
+        <div class="station-label">
+          <span class="station-dot"></span>
+           CAMERA STATION — LIVE FEED
+          <span class="station-dot"></span>
+        </div>
+
+        <div class="cam-wrapper" id="cam-wrapper">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="handCanvas"></canvas>
+
+          <!-- Cyberpunk corners -->
+          <div class="cam-corner tl"></div>
+          <div class="cam-corner tr"></div>
+          <div class="cam-corner bl"></div>
+          <div class="cam-corner br"></div>
+
+          <!-- Scan line -->
+          <div class="scan-line"></div>
+
+          <!-- Face frame -->
+          <div class="face-frame" id="face-frame"></div>
+
+          <!-- Face status -->
+          <div class="face-status" id="face-status">✓ FACE DETECTED &nbsp;|&nbsp; ✓ READY TO CAPTURE</div>
+
+          <!-- Countdown -->
+          <div id="countdown-overlay">
+            <div class="countdown-num" id="countdown-num">3</div>
+          </div>
+
+          <!-- Flash -->
+          <div id="flash"></div>
+
+          <!-- Gesture progress ring -->
+          <div class="gesture-ring" id="gesture-ring" style="display:none;">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="ring-bg" cx="22" cy="22" r="20"/>
+              <circle class="ring-fg" id="ring-fg" cx="22" cy="22" r="20"/>
+            </svg>
+          </div>
+
+          <!-- HUD -->
+          <div class="cam-hud">
+            <div class="hud-text" id="hud-fps">FPS: --</div>
+            <div class="hud-text" id="hud-hand">HAND: SCANNING</div>
+          </div>
+        </div>
+
+        <div class="cam-controls">
+          <button class="btn btn-cyan" id="start-cam-btn">▶ START CAMERA</button>
+          <button class="btn btn-gold" id="manual-capture-btn" style="display:none;">📸 CAPTURE</button>
+          <button class="btn btn-purple" id="shuffle-btn" style="display:none;">⟳ SHUFFLE</button>
+        </div>
+      </div>
+
+      <!-- Puzzle Station -->
+      <div class="puzzle-station glass-card">
+        <div class="station-label">
+          <span class="station-dot" style="background:var(--purple);box-shadow:0 0 8px var(--purple);"></span>
+          GLASS PUZZLE ENGINE — 3×3
+          <span class="station-dot" style="background:var(--purple);box-shadow:0 0 8px var(--purple);"></span>
+        </div>
+
+        <div class="puzzle-grid" id="puzzle-grid">
+          <canvas id="puzzleHandCanvas"></canvas>
+          <div class="puzzle-empty-state">
+            <div class="empty-icon">🧩</div>
+            <div class="empty-text">
+              CAPTURE YOUR SNAPSHOT<br>
+              TO BEGIN THE PUZZLE<br><br>
+              ─── AI HAND CONTROL ───<br>
+              POINT INDEX FINGER AT A TILE
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer glass-card" style="border-radius:0;border-left:none;border-right:none;border-bottom:none;">
+    <div class="footer-heading">◈ CONTACT WITH DEVELOPER ◈</div>
+    <div class="social-links">
+      <a href="https://www.facebook.com/share/18YSgb9Ywo/" target="_blank" class="social-btn fb" title="Facebook">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      </a>
+      <a href="https://www.instagram.com/mdfahadhossain006?igsh=ZzhhbzljaXVxcmFw" target="_blank" class="social-btn ig" title="Instagram">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      </a>
+      <a href="https://youtube.com/@brightnessworld?si=Ax7tpQFOZvLxCRU5" target="_blank" class="social-btn yt" title="YouTube">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      </a>
+      <a href="https://github.com/MdFahadHossain006" target="_blank" class="social-btn gh" title="GitHub">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Mute button -->
+<button id="mute-btn" title="Toggle Sound">🔊</button>
+
+<!-- Notification -->
+<div id="notif"></div>
+
+<!-- Win screen -->
+<div id="win-screen">
+  <div class="win-card glass-card">
+    <canvas id="confetti-canvas"></canvas>
+    <div class="win-trophy">🏆</div>
+    <div class="win-title">PUZZLE SOLVED!</div>
+    <div class="win-stats">
+      <div class="win-stat">
+        <div class="win-stat-label">TIME</div>
+        <div class="win-stat-value" id="win-time">—</div>
+      </div>
+      <div class="win-stat">
+        <div class="win-stat-label">MOVES</div>
+        <div class="win-stat-value" id="win-moves">—</div>
+      </div>
+      <div class="win-stat">
+        <div class="win-stat-label">ACCURACY</div>
+        <div class="win-stat-value" id="win-accuracy">—</div>
+      </div>
+    </div>
+    <button class="btn btn-cyan" id="play-again-btn" style="font-size:0.8rem;padding:14px 32px;">▶ PLAY AGAIN</button>
+  </div>
+</div>
+
+<!-- Transition overlay -->
+<div id="transition-overlay">
+  <canvas id="transition-canvas"></canvas>
+</div>
+
+<!-- MediaPipe -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+<script>
+// ════════════════════════════════════════════════
+// BACKGROUND PARTICLE CANVAS
+// ════════════════════════════════════════════════
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const particles = [];
+  const beams = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Create particles
+  for (let i = 0; i < 80; i++) {
+    particles.push({
+      x: Math.random() * 1920, y: Math.random() * 1080,
+      r: Math.random() * 2 + 0.3,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      alpha: Math.random() * 0.6 + 0.1,
+      hue: Math.random() > 0.5 ? '0,245,255' : '123,47,255'
+    });
+  }
+
+  // Light beams
+  for (let i = 0; i < 3; i++) {
+    beams.push({
+      x: Math.random() * 1920, y: 0,
+      angle: Math.PI / 6 + Math.random() * Math.PI / 4,
+      len: 300 + Math.random() * 400,
+      alpha: 0.03 + Math.random() * 0.04,
+      speed: (Math.random() - 0.5) * 0.5
+    });
+  }
+
+  function drawFrame() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Beams
+    beams.forEach(b => {
+      b.x += b.speed;
+      if (b.x < -200 || b.x > W + 200) b.x = Math.random() * W;
+      const g = ctx.createLinearGradient(b.x, b.y, b.x + Math.cos(b.angle) * b.len, b.y + Math.sin(b.angle) * b.len);
+      g.addColorStop(0, `rgba(123,47,255,${b.alpha})`);
+      g.addColorStop(0.5, `rgba(0,245,255,${b.alpha * 0.5})`);
+      g.addColorStop(1, 'transparent');
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.beginPath();
+      ctx.moveTo(b.x - 30, b.y);
+      ctx.lineTo(b.x + 30, b.y);
+      ctx.lineTo(b.x + 30 + Math.cos(b.angle) * b.len, b.y + Math.sin(b.angle) * b.len);
+      ctx.lineTo(b.x - 30 + Math.cos(b.angle) * b.len, b.y + Math.sin(b.angle) * b.len);
+      ctx.closePath();
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // Particles
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.hue},${p.alpha})`;
+      ctx.fill();
+    });
+
+    // Holographic circles
+    const t = Date.now() / 3000;
+    for (let i = 0; i < 3; i++) {
+      const cx = W * (0.2 + i * 0.3) + Math.sin(t + i) * 60;
+      const cy = H * 0.5 + Math.cos(t * 0.7 + i) * 80;
+      const r = 60 + i * 40 + Math.sin(t * 2 + i) * 20;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(0,245,255,${0.02 + i * 0.01})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+})();
+
+// ════════════════════════════════════════════════
+// AUDIO SYSTEM
+// ════════════════════════════════════════════════
+const Audio = (function() {
+  let muted = false;
+  let actx = null;
+
+  function getCtx() {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    return actx;
+  }
+
+  function beep(freq, dur, type = 'sine', vol = 0.15) {
+    if (muted) return;
+    try {
+      const ctx = getCtx();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+      o.start(); o.stop(ctx.currentTime + dur);
+    } catch(e) {}
+  }
+
+  function chord(freqs, dur) {
+    freqs.forEach((f, i) => setTimeout(() => beep(f, dur, 'sine', 0.1), i * 40));
+  }
+
+  return {
+    toggle() { muted = !muted; },
+    isMuted() { return muted; },
+    countdown(n) { beep(n === 1 ? 880 : 660, 0.2, 'square', 0.1); },
+    capture() { chord([523, 659, 784, 1047], 0.5); },
+    move() { beep(440 + Math.random() * 200, 0.08, 'sine', 0.06); },
+    win() { chord([523, 659, 784, 1047, 1319], 0.8); },
+    ui() { beep(600, 0.06); }
+  };
+})();
+
+document.getElementById('mute-btn').addEventListener('click', function() {
+  Audio.toggle();
+  this.textContent = Audio.isMuted() ? '🔇' : '🔊';
+});
+
+// ════════════════════════════════════════════════
+// NOTIFICATION
+// ════════════════════════════════════════════════
+let notifTimer = null;
+function notify(msg, dur = 2500) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ════════════════════════════════════════════════
+// GAME STATE
+// ════════════════════════════════════════════════
+const State = {
+  phase: 'idle', // idle | camera | countdown | puzzle | win
+  tiles: [],           // current tile order (0-8, 8=empty)
+  solved: [],          // solved order
+  emptyIdx: 8,
+  moves: 0,
+  startTime: null,
+  timerInterval: null,
+  bestMoves: null,
+  capturedImage: null, // ImageBitmap
+  puzzleSize: 3,
+  handDetected: false,
+  gestureHoldStart: null,
+  lastMoveTime: 0,
+  fingerCol: -1, fingerRow: -1,
+};
+
+// ════════════════════════════════════════════════
+// DASHBOARD UPDATE
+// ════════════════════════════════════════════════
+function updateDashboard() {
+  document.getElementById('moves-val').textContent = State.moves;
+
+  if (State.startTime) {
+    const s = Math.floor((Date.now() - State.startTime) / 1000);
+    document.getElementById('time-val').textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  }
+
+  const correct = State.tiles.filter((v, i) => v === i).length;
+  const totalTiles = State.puzzleSize * State.puzzleSize - 1;
+  const pct = State.tiles.length ? Math.round(correct / totalTiles * 100) : 0;
+  document.getElementById('complete-val').textContent = pct + '%';
+
+  if (State.moves > 0) {
+    const acc = Math.max(0, Math.round((1 - (State.moves - totalTiles) / State.moves) * 100));
+    document.getElementById('accuracy-val').textContent = acc + '%';
+  }
+
+  if (State.bestMoves !== null) {
+    document.getElementById('best-val').textContent = State.bestMoves;
+  }
+
+  const grid = document.getElementById('puzzle-grid');
+  if (State.tiles.length) {
+    if (pct >= 70 && pct < 100) grid.classList.add('near-done');
+    else if (pct === 100) { grid.classList.remove('near-done'); grid.classList.add('solved'); }
+    else grid.classList.remove('near-done', 'solved');
+  }
+}
+
+// ════════════════════════════════════════════════
+// CAMERA
+// ════════════════════════════════════════════════
+const video = document.getElementById('video');
+const handCanvas = document.getElementById('handCanvas');
+const handCtx = handCanvas.getContext('2d');
+let mpHands = null, mpCamera = null;
+let lastFpsTime = 0, fpsCount = 0, currentFps = 0;
+
+document.getElementById('start-cam-btn').addEventListener('click', startCamera);
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+      handCanvas.width = video.videoWidth;
+      handCanvas.height = video.videoHeight;
+      initMediaPipe();
+    };
+    document.getElementById('start-cam-btn').style.display = 'none';
+    document.getElementById('manual-capture-btn').style.display = '';
+    State.phase = 'camera';
+    notify('📹 CAMERA ACTIVE — HOLD HAND STILL TO AUTO-CAPTURE');
+    Audio.ui();
+  } catch(e) {
+    notify('⚠ CAMERA ACCESS REQUIRED');
+  }
+}
+
+function initMediaPipe() {
+  mpHands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+  mpHands.setOptions({
+    maxNumHands: 1,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.7,
+    minTrackingConfidence: 0.6
+  });
+  mpHands.onResults(onHandResults);
+
+  mpCamera = new Camera(video, {
+    onFrame: async () => { await mpHands.send({ image: video }); },
+    width: 640, height: 480
+  });
+  mpCamera.start();
+}
+
+// ════════════════════════════════════════════════
+// HAND TRACKING RESULTS
+// ════════════════════════════════════════════════
+function onHandResults(results) {
+  // FPS
+  fpsCount++;
+  const now = Date.now();
+  if (now - lastFpsTime > 1000) {
+    currentFps = fpsCount;
+    fpsCount = 0;
+    lastFpsTime = now;
+    document.getElementById('hud-fps').textContent = `FPS: ${currentFps}`;
+  }
+
+  const W = handCanvas.width, H = handCanvas.height;
+  handCtx.clearRect(0, 0, W, H);
+
+  State.handDetected = results.multiHandLandmarks && results.multiHandLandmarks.length > 0;
+  document.getElementById('hud-hand').textContent = State.handDetected ? 'HAND: DETECTED' : 'HAND: SCANNING';
+
+  if (!State.handDetected) {
+    State.gestureHoldStart = null;
+    document.getElementById('gesture-ring').style.display = 'none';
+    if (State.phase === 'camera') {
+      document.getElementById('face-status').classList.remove('visible');
+    }
+    return;
+  }
+
+  const lm = results.multiHandLandmarks[0];
+
+  // ── Draw skeleton on camera ──
+  if (State.phase === 'camera') {
+    drawHandSkeleton(handCtx, lm, W, H);
+    handleGestureCapture(lm);
+    document.getElementById('face-status').classList.add('visible');
+  }
+
+  // ── Control puzzle with hand ──
+  if (State.phase === 'puzzle') {
+    handlePuzzleHand(lm);
+  }
+}
+
+// Draw beautiful hand skeleton
+function drawHandSkeleton(ctx, lm, W, H) {
+  const CONNECTIONS = [
+    [0,1],[1,2],[2,3],[3,4],
+    [0,5],[5,6],[6,7],[7,8],
+    [0,9],[9,10],[10,11],[11,12],
+    [0,13],[13,14],[14,15],[15,16],
+    [0,17],[17,18],[18,19],[19,20],
+    [5,9],[9,13],[13,17]
+  ];
+
+  // Mirror X since video is mirrored
+  const pts = lm.map(p => ({ x: (1 - p.x) * W, y: p.y * H }));
+
+  const t = Date.now() / 1000;
+
+  // Draw connections
+  ctx.save();
+  CONNECTIONS.forEach(([a, b]) => {
+    const pa = pts[a], pb = pts[b];
+    ctx.beginPath();
+    ctx.moveTo(pa.x, pa.y);
+    ctx.lineTo(pb.x, pb.y);
+
+    // Gradient line
+    const grad = ctx.createLinearGradient(pa.x, pa.y, pb.x, pb.y);
+    grad.addColorStop(0, `rgba(0,245,255,0.7)`);
+    grad.addColorStop(0.5, `rgba(123,47,255,0.9)`);
+    grad.addColorStop(1, `rgba(0,245,255,0.7)`);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = 'rgba(0,245,255,0.6)';
+    ctx.shadowBlur = 6;
+    ctx.stroke();
+  });
+
+  // Draw joints
+  pts.forEach((p, i) => {
+    const isTip = [4,8,12,16,20].includes(i);
+    const r = isTip ? 7 : 5;
+
+    // Outer glow
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2);
+    ctx.fillStyle = isTip ? `rgba(0,245,255,${0.15 + 0.1 * Math.sin(t * 3 + i)})` : `rgba(123,47,255,0.1)`;
+    ctx.fill();
+
+    // Core dot
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    if (isTip) {
+      ctx.fillStyle = '#00f5ff';
+      ctx.shadowColor = 'rgba(0,245,255,0.9)';
+      ctx.shadowBlur = 12;
+    } else {
+      ctx.fillStyle = '#7b2fff';
+      ctx.shadowColor = 'rgba(123,47,255,0.8)';
+      ctx.shadowBlur = 8;
+    }
+    ctx.fill();
+  });
+
+  // Index fingertip highlight
+  const tip = pts[8];
+  ctx.beginPath();
+  ctx.arc(tip.x, tip.y, 12 + 3 * Math.sin(t * 4), 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(0,255,136,${0.5 + 0.3 * Math.sin(t * 4)})`;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = 'rgba(0,255,136,0.8)';
+  ctx.shadowBlur = 15;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════════
+// GESTURE CAPTURE (hold still 3s)
+// ════════════════════════════════════════════════
+let lastHandPos = { x: 0, y: 0 };
+function handleGestureCapture(lm) {
+  if (State.phase !== 'camera') return;
+
+  const cx = lm[9].x, cy = lm[9].y;
+  const dx = cx - lastHandPos.x, dy = cy - lastHandPos.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+
+  if (dist > 0.02) {
+    lastHandPos = { x: cx, y: cy };
+    State.gestureHoldStart = null;
+    document.getElementById('gesture-ring').style.display = 'none';
+    return;
+  }
+
+  if (!State.gestureHoldStart) {
+    State.gestureHoldStart = Date.now();
+    document.getElementById('gesture-ring').style.display = 'block';
+  }
+
+  const elapsed = (Date.now() - State.gestureHoldStart) / 3000;
+  const dashLen = 125.66;
+  document.getElementById('ring-fg').style.strokeDashoffset = dashLen * (1 - elapsed);
+
+  if (elapsed >= 1) {
+    State.gestureHoldStart = null;
+    document.getElementById('gesture-ring').style.display = 'none';
+    triggerCountdown();
+  }
+
+  lastHandPos = { x: cx, y: cy };
+}
+
+// ════════════════════════════════════════════════
+// COUNTDOWN & CAPTURE
+// ════════════════════════════════════════════════
+let countdownActive = false;
+function triggerCountdown() {
+  if (countdownActive || State.phase !== 'camera') return;
+  countdownActive = true;
+  const overlay = document.getElementById('countdown-overlay');
+  const numEl = document.getElementById('countdown-num');
+  overlay.classList.add('active');
+
+  let n = 3;
+  numEl.textContent = n;
+  Audio.countdown(n);
+
+  const interval = setInterval(() => {
+    n--;
+    if (n > 0) {
+      numEl.textContent = n;
+      // Force re-animation
+      numEl.style.animation = 'none';
+      void numEl.offsetWidth;
+      numEl.style.animation = 'cdPop 0.8s cubic-bezier(0.23,1,0.32,1) forwards';
+      Audio.countdown(n);
+    } else if (n === 0) {
+      numEl.textContent = '📸';
+      numEl.style.animation = 'none';
+      void numEl.offsetWidth;
+      numEl.style.animation = 'cdPop 0.8s cubic-bezier(0.23,1,0.32,1) forwards';
+      Audio.capture();
+    } else {
+      clearInterval(interval);
+      overlay.classList.remove('active');
+      capturePhoto();
+      countdownActive = false;
+    }
+  }, 800);
+}
+
+function capturePhoto() {
+  // Flash
+  const flash = document.getElementById('flash');
+  flash.style.opacity = '1';
+  setTimeout(() => { flash.style.opacity = '0'; }, 200);
+
+  // Capture frame
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = video.videoWidth;
+  offCanvas.height = video.videoHeight;
+  const offCtx = offCanvas.getContext('2d');
+  offCtx.translate(offCanvas.width, 0); offCtx.scale(-1, 1);
+  offCtx.drawImage(video, 0, 0);
+
+  createImageBitmap(offCanvas).then(bmp => {
+    State.capturedImage = bmp;
+    notify('📸 CAPTURED! BUILDING PUZZLE...');
+    setTimeout(() => runTransition(), 500);
+  });
+}
+
+document.getElementById('manual-capture-btn').addEventListener('click', () => {
+  if (State.phase === 'camera') triggerCountdown();
+  else if (State.phase === 'puzzle') shufflePuzzle();
+});
+
+// ════════════════════════════════════════════════
+// CINEMATIC TRANSITION
+// ════════════════════════════════════════════════
+function runTransition() {
+  State.phase = 'transition';
+  const overlay = document.getElementById('transition-overlay');
+  const canvas = document.getElementById('transition-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  overlay.style.opacity = '1';
+
+  // Shatter particles
+  const shards = [];
+  for (let i = 0; i < 60; i++) {
+    shards.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 0.5) * 8,
+      r: Math.random() * 15 + 5,
+      alpha: 1,
+      hue: Math.random() > 0.5 ? '0,245,255' : '123,47,255'
+    });
+  }
+
+  let frame = 0;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(13,13,17,0.3)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    shards.forEach(s => {
+      s.x += s.vx; s.y += s.vy;
+      s.vy += 0.3; s.alpha -= 0.025;
+      if (s.alpha <= 0) return;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${s.hue},${s.alpha})`;
+      ctx.shadowColor = `rgba(${s.hue},0.8)`;
+      ctx.shadowBlur = 10;
+      ctx.fill();
+    });
+
+    frame++;
+    if (frame < 60) requestAnimationFrame(animate);
+    else {
+      overlay.style.opacity = '0';
+      setTimeout(() => { buildPuzzle(); }, 300);
+    }
+  }
+  animate();
+}
+
+// ════════════════════════════════════════════════
+// PUZZLE ENGINE
+// ════════════════════════════════════════════════
+function buildPuzzle() {
+  const N = State.puzzleSize;
+  const total = N * N;
+
+  // Create tile order
+  State.tiles = Array.from({ length: total }, (_, i) => i);
+  State.emptyIdx = total - 1;
+
+  shuffleArray(State.tiles);
+  while (!isSolvable(State.tiles, N)) shuffleArray(State.tiles);
+
+  State.emptyIdx = State.tiles.indexOf(total - 1);
+  State.moves = 0;
+  State.startTime = Date.now();
+
+  if (State.timerInterval) clearInterval(State.timerInterval);
+  State.timerInterval = setInterval(updateDashboard, 1000);
+
+  State.phase = 'puzzle';
+  renderPuzzle();
+
+  // Update controls
+  document.getElementById('manual-capture-btn').textContent = '📷 NEW PHOTO';
+  document.getElementById('shuffle-btn').style.display = '';
+
+  notify('🧩 PUZZLE READY! USE FINGER OR CLICK TO MOVE TILES');
+  Audio.ui();
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function isSolvable(tiles, N) {
+  const arr = tiles.filter(v => v !== N * N - 1);
+  let inv = 0;
+  for (let i = 0; i < arr.length; i++)
+    for (let j = i + 1; j < arr.length; j++)
+      if (arr[i] > arr[j]) inv++;
+  const blankRow = Math.floor(tiles.indexOf(N * N - 1) / N);
+  if (N % 2 === 1) return inv % 2 === 0;
+  return (blankRow % 2 === 0) ? (inv % 2 === 1) : (inv % 2 === 0);
+}
+
+function renderPuzzle() {
+  const grid = document.getElementById('puzzle-grid');
+  grid.innerHTML = '';
+
+  // Re-add puzzle hand canvas
+  const phCanvas = document.createElement('canvas');
+  phCanvas.id = 'puzzleHandCanvas';
+  phCanvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;';
+  grid.appendChild(phCanvas);
+
+  const N = State.puzzleSize;
+  const total = N * N;
+  const img = State.capturedImage;
+
+  State.tiles.forEach((tileVal, idx) => {
+    const tile = document.createElement('div');
+    tile.className = 'puzzle-tile' + (tileVal === total - 1 ? ' empty' : '');
+    tile.dataset.idx = idx;
+
+    if (tileVal !== total - 1 && img) {
+      const tc = document.createElement('canvas');
+      const tw = img.width / N, th = img.height / N;
+      tc.width = tw; tc.height = th;
+      const tctx = tc.getContext('2d');
+      const srcCol = tileVal % N, srcRow = Math.floor(tileVal / N);
+      tctx.drawImage(img, srcCol * tw, srcRow * th, tw, th, 0, 0, tw, th);
+
+      // Check if correct
+      if (tileVal === idx) tile.classList.add('correct');
+
+      tile.appendChild(tc);
+    }
+
+    tile.addEventListener('click', () => clickTile(idx));
+    grid.appendChild(tile);
+  });
+
+  updateDashboard();
+}
+
+function clickTile(clickedIdx) {
+  if (State.phase !== 'puzzle') return;
+  tryMove(clickedIdx);
+}
+
+function tryMove(idx) {
+  const N = State.puzzleSize;
+  const empty = State.emptyIdx;
+  const row = Math.floor(idx / N), col = idx % N;
+  const eRow = Math.floor(empty / N), eCol = empty % N;
+
+  const adjacent = (Math.abs(row - eRow) + Math.abs(col - eCol)) === 1;
+  if (!adjacent) return false;
+
+  // Swap
+  [State.tiles[idx], State.tiles[empty]] = [State.tiles[empty], State.tiles[idx]];
+  State.emptyIdx = idx;
+  State.moves++;
+  Audio.move();
+
+  renderPuzzle();
+
+  // Highlight moved tile
+  const tiles = document.querySelectorAll('.puzzle-tile');
+  const movedTile = tiles[empty]; // old empty is where tile moved to
+  if (movedTile) {
+    movedTile.classList.add('moving');
+    setTimeout(() => movedTile.classList.remove('moving'), 300);
+  }
+
+  updateDashboard();
+  checkWin();
+  return true;
+}
+
+function checkWin() {
+  const total = State.puzzleSize * State.puzzleSize;
+  const won = State.tiles.every((v, i) => v === i);
+  if (won) {
+    clearInterval(State.timerInterval);
+    State.phase = 'win';
+    setTimeout(showWin, 600);
+  }
+}
+
+function shufflePuzzle() {
+  if (State.phase !== 'puzzle') return;
+  shuffleArray(State.tiles);
+  while (!isSolvable(State.tiles, State.puzzleSize)) shuffleArray(State.tiles);
+  State.emptyIdx = State.tiles.indexOf(State.puzzleSize * State.puzzleSize - 1);
+  State.moves = 0;
+  State.startTime = Date.now();
+  renderPuzzle();
+  notify('⟳ PUZZLE SHUFFLED');
+}
+
+document.getElementById('shuffle-btn').addEventListener('click', shufflePuzzle);
+
+// ════════════════════════════════════════════════
+// HAND CONTROL FOR PUZZLE
+// ════════════════════════════════════════════════
+function handlePuzzleHand(lm) {
+  const grid = document.getElementById('puzzle-grid');
+  const rect = grid.getBoundingClientRect();
+  const N = State.puzzleSize;
+
+  // Index fingertip (mirrored)
+  const tipX = (1 - lm[8].x) * window.innerWidth - rect.left;
+  const tipY = lm[8].y * window.innerHeight - rect.top;
+
+  const col = Math.floor(tipX / (rect.width / N));
+  const row = Math.floor(tipY / (rect.height / N));
+
+  // Draw hand on puzzle canvas
+  const phCanvas = document.getElementById('puzzleHandCanvas');
+  if (phCanvas) {
+    phCanvas.width = rect.width;
+    phCanvas.height = rect.height;
+    const pCtx = phCanvas.getContext('2d');
+    pCtx.clearRect(0, 0, rect.width, rect.height);
+
+    // Draw ALL landmarks mapped to puzzle grid
+    const CONNECTIONS = [
+      [0,1],[1,2],[2,3],[3,4],
+      [0,5],[5,6],[6,7],[7,8],
+      [0,9],[9,10],[10,11],[11,12],
+      [0,13],[13,14],[14,15],[15,16],
+      [0,17],[17,18],[18,19],[19,20],
+      [5,9],[9,13],[13,17]
+    ];
+
+    const pts = lm.map(p => ({
+      x: (1 - p.x) * window.innerWidth - rect.left,
+      y: p.y * window.innerHeight - rect.top
+    }));
+
+    pCtx.save();
+    CONNECTIONS.forEach(([a, b]) => {
+      const pa = pts[a], pb = pts[b];
+      pCtx.beginPath();
+      pCtx.moveTo(pa.x, pa.y);
+      pCtx.lineTo(pb.x, pb.y);
+      pCtx.strokeStyle = 'rgba(0,245,255,0.6)';
+      pCtx.lineWidth = 2;
+      pCtx.shadowColor = 'rgba(0,245,255,0.5)';
+      pCtx.shadowBlur = 5;
+      pCtx.stroke();
+    });
+
+    pts.forEach((p, i) => {
+      const isTip = [4,8,12,16,20].includes(i);
+      pCtx.beginPath();
+      pCtx.arc(p.x, p.y, isTip ? 6 : 4, 0, Math.PI * 2);
+      pCtx.fillStyle = isTip ? '#00f5ff' : '#7b2fff';
+      pCtx.shadowColor = isTip ? 'rgba(0,245,255,0.8)' : 'rgba(123,47,255,0.6)';
+      pCtx.shadowBlur = 8;
+      pCtx.fill();
+    });
+
+    // Index fingertip highlight ring
+    const tip = pts[8];
+    pCtx.beginPath();
+    pCtx.arc(tip.x, tip.y, 16, 0, Math.PI * 2);
+    pCtx.strokeStyle = 'rgba(0,255,136,0.8)';
+    pCtx.lineWidth = 2;
+    pCtx.shadowColor = 'rgba(0,255,136,0.8)';
+    pCtx.shadowBlur = 15;
+    pCtx.stroke();
+
+    // Highlight hovered tile
+    if (col >= 0 && col < N && row >= 0 && row < N) {
+      const tw = rect.width / N, th = rect.height / N;
+      pCtx.beginPath();
+      pCtx.rect(col * tw + 1, row * th + 1, tw - 2, th - 2);
+      pCtx.strokeStyle = 'rgba(0,255,136,0.5)';
+      pCtx.lineWidth = 2;
+      pCtx.stroke();
+    }
+
+    pCtx.restore();
+  }
+
+  // Debounce
+  const now = Date.now();
+  if (now - State.lastMoveTime < 500) return;
+
+  if (col !== State.fingerCol || row !== State.fingerRow) {
+    State.fingerCol = col; State.fingerRow = row;
+  }
+
+  // Check if finger is in valid tile area
+  if (col >= 0 && col < N && row >= 0 && row < N) {
+    const tileIdx = row * N + col;
+    if (tileIdx !== State.emptyIdx && now - State.lastMoveTime > 500) {
+      const moved = tryMove(tileIdx);
+      if (moved) State.lastMoveTime = now;
+    }
+  }
+}
+
+// ════════════════════════════════════════════════
+// WIN SCREEN
+// ════════════════════════════════════════════════
+function showWin() {
+  clearInterval(State.timerInterval);
+  const elapsed = Math.floor((Date.now() - State.startTime) / 1000);
+  const timeStr = `${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,'0')}`;
+  const acc = State.moves > 0 ? Math.max(0, Math.round((1 - (State.moves - 8) / State.moves) * 100)) : 100;
+
+  document.getElementById('win-time').textContent = timeStr;
+  document.getElementById('win-moves').textContent = State.moves;
+  document.getElementById('win-accuracy').textContent = acc + '%';
+
+  if (State.bestMoves === null || State.moves < State.bestMoves) {
+    State.bestMoves = State.moves;
+    document.getElementById('best-val').textContent = State.bestMoves;
+  }
+
+  document.getElementById('win-screen').classList.add('active');
+  Audio.win();
+  startConfetti();
+}
+
+function startConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.offsetWidth;
+  canvas.height = canvas.parentElement.offsetHeight;
+
+  const pieces = Array.from({length: 60}, () => ({
+    x: Math.random() * canvas.width,
+    y: -20,
+    vx: (Math.random() - 0.5) * 4,
+    vy: 2 + Math.random() * 3,
+    r: 4 + Math.random() * 6,
+    color: ['#00f5ff','#7b2fff','#ffd700','#ff2d78','#00ff88'][Math.floor(Math.random()*5)],
+    spin: Math.random() * Math.PI * 2,
+    spinV: (Math.random() - 0.5) * 0.2
+  }));
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      p.spin += p.spinV;
+      if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.spin);
+      ctx.fillStyle = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 6;
+      ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r);
+      ctx.restore();
+    });
+    if (document.getElementById('win-screen').classList.contains('active')) requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+document.getElementById('play-again-btn').addEventListener('click', () => {
+  document.getElementById('win-screen').classList.remove('active');
+  State.phase = 'camera';
+  State.moves = 0;
+  State.startTime = null;
+  updateDashboard();
+  const grid = document.getElementById('puzzle-grid');
+  grid.innerHTML = `<div class="puzzle-empty-state">
+    <div class="empty-icon">🧩</div>
+    <div class="empty-text">CAPTURE YOUR SNAPSHOT<br>TO BEGIN THE PUZZLE<br><br>─── AI HAND CONTROL ───<br>POINT INDEX FINGER AT A TILE</div>
+  </div>`;
+  notify('📹 CAMERA READY — CAPTURE A NEW PHOTO');
+  Audio.ui();
+});
+
+// ════════════════════════════════════════════════
+// DYNAMIC GLASS REFLECTION (cursor)
+// ════════════════════════════════════════════════
+document.addEventListener('mousemove', e => {
+  const cards = document.querySelectorAll('.glass-card');
+  cards.forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const xPct = (x / rect.width) * 100;
+    const yPct = (y / rect.height) * 100;
+    card.style.background = `radial-gradient(circle at ${xPct}% ${yPct}%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 40%, transparent 70%)`;
+  });
+});
+
+// ════════════════════════════════════════════════
+// TIMER LOOP
+// ════════════════════════════════════════════════
+setInterval(() => {
+  if (State.phase === 'puzzle' && State.startTime) updateDashboard();
+}, 1000);
+
+// Init
+updateDashboard();
+notify('🚀 WELCOME — CLICK START CAMERA TO BEGIN');
+</script>
+</body>
+</html>
